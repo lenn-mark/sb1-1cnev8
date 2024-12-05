@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  isAdmin       Boolean        @default(false)
+  subscription  Subscription?
+  shipments     Shipment[]
+  alarms        Alarm[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([email])
+}
+
+model Subscription {
+  id            String         @id @default(uuid())
+  userId        String         @unique
+  user          User           @relation(fields: [userId], references: [id])
+  plan          String
+  status        String
+  startDate     DateTime
+  endDate       DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([userId])
+}
+
+model Shipment {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  trackingNumber  String
+  carrierId       String
+  status          String
+  origin          Json
+  destination     Json
+  events          Json
+  order           Json?
+  internalNotes   String?        @db.Text
+  tags            Tag[]
+  alarms          Alarm[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([trackingNumber])
+}
+
+model Alarm {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  name            String
+  conditions      Json
+  scope           String
+  trackingNumber  String?
+  shipments       Shipment[]
+  active          Boolean        @default(true)
+  notifyEmail     String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([userId])
+}
+
+model Tag {
+  id            String         @id @default(uuid())
+  name          String
+  color         String
+  shipments     Shipment[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([name])
+}
+
+model Webhook {
+  id            String         @id @default(uuid())
+  url           String
+  secret        String
+  events        Json
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
